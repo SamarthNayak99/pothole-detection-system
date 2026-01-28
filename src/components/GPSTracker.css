@@ -1,0 +1,46 @@
+.gps-tracker-container {
+    margin-bottom: var(--spacing-lg);
+}
+
+.gps-tracker-container h3 {
+    margin-bottom: var(--spacing-md);
+    color: var(--text-primary);
+    font-size: var(--font-size-xl);
+}
+
+.coordinates-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: var(--spacing-md);
+}
+
+.coordinate-item {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xs);
+    padding: var(--spacing-sm);
+    background: rgba(99, 102, 241, 0.1);
+    border-radius: var(--radius-sm);
+    border: 1px solid rgba(99, 102, 241, 0.2);
+}
+
+.coordinate-label {
+    font-size: var(--font-size-xs);
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 500;
+}
+
+.coordinate-value {
+    font-size: var(--font-size-lg);
+    color: var(--accent-cyan);
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 768px) {
+    .coordinates-grid {
+        grid-template-columns: 1fr;
+    }
+}

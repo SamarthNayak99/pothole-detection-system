@@ -1,0 +1,50 @@
+.status-container {
+    display: flex;
+    gap: var(--spacing-sm);
+    flex-wrap: wrap;
+    margin-bottom: var(--spacing-md);
+}
+
+.status-badge {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    padding: var(--spacing-xs) var(--spacing-sm);
+    border-radius: var(--radius-sm);
+    background: var(--bg-card);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    font-size: var(--font-size-sm);
+    font-weight: 500;
+    transition: all var(--transition-base);
+}
+
+.status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    transition: all var(--transition-base);
+}
+
+.status-badge.active .status-dot {
+    background: var(--success);
+    box-shadow: 0 0 8px var(--success);
+    animation: pulse 2s ease-in-out infinite;
+}
+
+.status-badge.inactive .status-dot {
+    background: var(--error);
+}
+
+.status-badge.active {
+    border-color: var(--success);
+    color: var(--success);
+}
+
+.status-badge.inactive {
+    border-color: var(--error);
+    color: var(--text-muted);
+}
+
+.status-text {
+    color: inherit;
+}

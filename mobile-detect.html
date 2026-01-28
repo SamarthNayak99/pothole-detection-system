@@ -1,0 +1,831 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#667eea">
+    <title>Pothole Detector - Mobile</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        :root {
+            /* Light mode */
+            --bg-gradient-start: #667eea;
+            --bg-gradient-end: #764ba2;
+            --header-bg: rgba(0, 0, 0, 0.3);
+            --card-bg: rgba(255, 255, 255, 0.95);
+            --text-primary: #1f2937;
+            --text-secondary: #6b7280;
+            --border-color: rgba(0, 0, 0, 0.1);
+            --stats-bg: #f8f9fa;
+        }
+
+        body.dark-mode {
+            /* Dark mode */
+            --bg-gradient-start: #1e1b4b;
+            --bg-gradient-end: #312e81;
+            --header-bg: rgba(0, 0, 0, 0.5);
+            --card-bg: rgba(30, 27, 75, 0.95);
+            --text-primary: #f9fafb;
+            --text-secondary: #d1d5db;
+            --border-color: rgba(255, 255, 255, 0.1);
+            --stats-bg: #312e81;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, var(--bg-gradient-start) 0%, var(--bg-gradient-end) 100%);
+            min-height: 100vh;
+            overflow-x: hidden;
+            transition: background 0.3s ease;
+        }
+
+        /* Theme Toggle */
+        .theme-toggle {
+            position: fixed;
+            top: 70px;
+            right: 15px;
+            z-index: 999;
+            display: flex;
+            gap: 6px;
+            background: var(--card-bg);
+            padding: 6px;
+            border-radius: 50px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .theme-btn {
+            width: 36px;
+            height: 36px;
+            border: none;
+            border-radius: 50%;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: transparent;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .theme-btn.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.4);
+        }
+
+        /* Header */
+        .header {
+            background: rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(10px);
+            padding: 15px 20px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .header h1 {
+            color: white;
+            font-size: 20px;
+            font-weight: 600;
+            text-align: center;
+        }
+
+        /* Camera Container */
+        .camera-container {
+            position: relative;
+            width: 100%;
+            height: 60vh;
+            background: #000;
+            overflow: hidden;
+        }
+
+        #camera-feed {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .camera-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            pointer-events: none;
+        }
+
+        .detection-frame {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 80%;
+            height: 60%;
+            border: 2px dashed rgba(255, 255, 255, 0.5);
+            border-radius: 12px;
+        }
+
+        /* Bounding Box for Detected Pothole */
+        .bounding-box {
+            position: absolute;
+            border: 4px solid #ef4444;
+            background: rgba(239, 68, 68, 0.2);
+            border-radius: 8px;
+            display: none;
+            animation: pulse-border 1s infinite;
+        }
+
+        .bounding-box.active {
+            display: block;
+        }
+
+        @keyframes pulse-border {
+
+            0%,
+            100% {
+                border-color: #ef4444;
+                box-shadow: 0 0 20px rgba(239, 68, 68, 0.6);
+            }
+
+            50% {
+                border-color: #fca5a5;
+                box-shadow: 0 0 30px rgba(239, 68, 68, 0.8);
+            }
+        }
+
+        .detection-label {
+            position: absolute;
+            top: -30px;
+            left: 0;
+            background: #ef4444;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+            white-space: nowrap;
+        }
+
+        .camera-status {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #10b981;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.5;
+            }
+        }
+
+        /* GPS Card */
+        .gps-card {
+            background: var(--card-bg);
+            margin: 15px;
+            padding: 15px;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            transition: background 0.3s ease;
+        }
+
+        .gps-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 12px;
+            color: #667eea;
+            font-weight: 600;
+        }
+
+        .gps-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .gps-item {
+            background: var(--stats-bg);
+            padding: 12px;
+            border-radius: 12px;
+            transition: background 0.3s ease;
+        }
+
+        .gps-label {
+            font-size: 11px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 4px;
+        }
+
+        .gps-value {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-primary);
+            font-family: 'Courier New', monospace;
+        }
+
+        /* Control Panel */
+        .control-panel {
+            background: var(--card-bg);
+            margin: 15px;
+            padding: 20px;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            transition: background 0.3s ease;
+        }
+
+        .detection-button {
+            width: 100%;
+            padding: 18px;
+            border: none;
+            border-radius: 12px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .btn-start {
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+            box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4);
+        }
+
+        .btn-start:active {
+            transform: scale(0.98);
+        }
+
+        .btn-stop {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            color: white;
+            box-shadow: 0 4px 15px rgba(239, 68, 68, 0.4);
+        }
+
+        /* Stats */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .stat-card {
+            background: var(--stats-bg);
+            padding: 12px;
+            border-radius: 12px;
+            text-align: center;
+            transition: background 0.3s ease;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .stat-label {
+            font-size: 11px;
+            color: var(--text-secondary);
+            margin-top: 4px;
+            text-transform: uppercase;
+        }
+
+        /* Toast Notification */
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: rgba(0, 0, 0, 0.9);
+            color: white;
+            padding: 16px 24px;
+            border-radius: 12px;
+            font-size: 14px;
+            z-index: 1000;
+            transition: transform 0.3s;
+            max-width: 90%;
+        }
+
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+        }
+
+        .toast.success {
+            background: linear-gradient(135deg, #10b981, #059669);
+        }
+
+        .toast.error {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+        }
+
+        /* Loading */
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: white;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* Bottom Nav */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--card-bg);
+            backdrop-filter: blur(10px);
+            display: flex;
+            justify-content: space-around;
+            padding: 12px 0;
+            border-top: 1px solid var(--border-color);
+            z-index: 100;
+            transition: background 0.3s ease;
+        }
+
+        .nav-item {
+            flex: 1;
+            text-align: center;
+            padding: 8px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 12px;
+            transition: color 0.3s;
+        }
+
+        .nav-item.active {
+            color: #667eea;
+        }
+
+        .nav-icon {
+            font-size: 24px;
+            display: block;
+            margin-bottom: 4px;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Header -->
+    <div class="header">
+        <h1>🕳️ Pothole Detector</h1>
+    </div>
+
+    <!-- Camera Feed -->
+    <div class="camera-container">
+        <video id="camera-feed" autoplay playsinline></video>
+        <div class="camera-overlay">
+            <div class="detection-frame"></div>
+            <div class="bounding-box" id="bounding-box">
+                <div class="detection-label" id="detection-label">Pothole 85%</div>
+            </div>
+            <div class="camera-status">
+                <span class="status-dot"></span>
+                <span id="camera-status-text">Camera Active</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- GPS Card -->
+    <div class="gps-card">
+        <div class="gps-header">
+            📍 GPS Location
+        </div>
+        <div class="gps-grid">
+            <div class="gps-item">
+                <div class="gps-label">Latitude</div>
+                <div class="gps-value" id="latitude">---</div>
+            </div>
+            <div class="gps-item">
+                <div class="gps-label">Longitude</div>
+                <div class="gps-value" id="longitude">---</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Theme Toggle -->
+    <div class="theme-toggle">
+        <button class="theme-btn active" id="light-btn" onclick="setTheme('light')" title="Light Mode">
+            ☀️
+        </button>
+        <button class="theme-btn" id="dark-btn" onclick="setTheme('dark')" title="Dark Mode">
+            🌙
+        </button>
+    </div>
+
+    <!-- Control Panel -->
+    <div class="control-panel">
+        <button class="detection-button btn-start" id="detect-btn">
+            <span>▶️</span>
+            <span>Start Detection</span>
+        </button>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value" id="detected-count">0</div>
+                <div class="stat-label">Detected</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="avg-confidence">0%</div>
+                <div class="stat-label">Avg Conf.</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="last-time">---</div>
+                <div class="stat-label">Last</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bottom Navigation -->
+    <div class="bottom-nav">
+        <a href="home.html" class="nav-item">
+            <span class="nav-icon">🏠</span>
+            Home
+        </a>
+        <a href="mobile-detect.html" class="nav-item active">
+            <span class="nav-icon">📹</span>
+            Detect
+        </a>
+        <a href="history.html" class="nav-item">
+            <span class="nav-icon">📊</span>
+            History
+        </a>
+        <a href="map.html" class="nav-item">
+            <span class="nav-icon">🗺️</span>
+            Map
+        </a>
+    </div>
+
+    <!-- Toast Notification -->
+    <div class="toast" id="toast"></div>
+
+    <!-- Audio for beep -->
+    <audio id="beep-sound" preload="auto">
+        <source
+            src="data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBTGH0fPTgjMGHm7A7+OZURE"
+            type="audio/wav">
+    </audio>
+
+    <script>
+        // Configuration
+        const API_URL = 'http://10.42.117.136:8000';
+        const DETECTION_INTERVAL = 1000; // 1 second
+        const COOLDOWN_MS = 5000; // 5 seconds
+
+        // State
+        let stream = null;
+        let isDetecting = false;
+        let detectionInterval = null;
+        let lastDetectionTime = 0;
+        let currentLat = null;
+        let currentLng = null;
+        let detectedCount = 0;
+        let confidenceSum = 0;
+
+        // Initialize camera
+        async function initCamera() {
+            try {
+                showToast('Requesting camera access...', 'info');
+
+                stream = await navigator.mediaDevices.getUserMedia({
+                    video: {
+                        facingMode: 'environment', // Back camera
+                        width: { ideal: 1920 },
+                        height: { ideal: 1080 }
+                    }
+                });
+
+                const video = document.getElementById('camera-feed');
+                video.srcObject = stream;
+
+                showToast('Camera ready!', 'success');
+                document.getElementById('camera-status-text').textContent = 'Camera Active';
+            } catch (error) {
+                console.error('Camera error:', error);
+                showToast('Camera access denied. Please enable camera permissions.', 'error');
+                document.getElementById('camera-status-text').textContent = 'Camera Error';
+            }
+        }
+
+        // Initialize GPS
+        function initGPS() {
+            if (!navigator.geolocation) {
+                showToast('GPS not supported on this device', 'error');
+                return;
+            }
+
+            showToast('Getting GPS location...', 'info');
+
+            navigator.geolocation.watchPosition(
+                (position) => {
+                    currentLat = position.coords.latitude;
+                    currentLng = position.coords.longitude;
+
+                    document.getElementById('latitude').textContent = currentLat.toFixed(7);
+                    document.getElementById('longitude').textContent = currentLng.toFixed(7);
+
+                    console.log('GPS updated:', currentLat, currentLng);
+                },
+                (error) => {
+                    console.error('GPS error:', error);
+                    showToast('GPS unavailable. Using approximate location.', 'error');
+
+                    // Fallback coordinates
+                    currentLat = 12.9233376;
+                    currentLng = 77.5011285;
+                    document.getElementById('latitude').textContent = currentLat.toFixed(7);
+                    document.getElementById('longitude').textContent = currentLng.toFixed(7);
+                },
+                {
+                    enableHighAccuracy: true,
+                    timeout: 10000,
+                    maximumAge: 0
+                }
+            );
+        }
+
+        // Capture frame and detect
+        async function detectPothole() {
+            try {
+                console.log('🔍 Starting detection...');
+
+                // Check cooldown
+                const now = Date.now();
+                if (now - lastDetectionTime < COOLDOWN_MS) {
+                    console.log('⏳ Cooldown active, skipping');
+                    return;
+                }
+
+                // Capture frame from video
+                const video = document.getElementById('camera-feed');
+                if (!video || !video.videoWidth) {
+                    console.log('❌ Video not ready');
+                    return;
+                }
+
+                console.log('📸 Capturing frame...');
+                const canvas = document.createElement('canvas');
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(video, 0, 0);
+
+                // Convert to blob
+                const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.95));
+                console.log(`✅ Frame captured: ${blob.size} bytes`);
+
+                // Send to backend
+                console.log(`🌐 Sending to: ${API_URL}/detect`);
+                const formData = new FormData();
+                formData.append('file', blob, 'frame.jpg');
+
+                const response = await fetch(`${API_URL}/detect`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                console.log(`📡 Response status: ${response.status}`);
+
+                if (!response.ok) {
+                    throw new Error(`Detection failed: ${response.status}`);
+                }
+
+                const result = await response.json();
+                console.log('✅ Detection result:', result);
+
+                // If pothole detected
+                if (result.detected && result.confidence >= 0.5) {
+                    lastDetectionTime = now;
+
+                    // Show bounding box on screen
+                    if (result.bbox) {
+                        showBoundingBox(result.bbox, result.confidence);
+                    }
+
+                    // Play beep
+                    document.getElementById('beep-sound').play().catch(e => console.log('Sound error:', e));
+
+                    // Vibrate
+                    if (navigator.vibrate) {
+                        navigator.vibrate([200, 100, 200]);
+                    }
+
+                    // Save pothole
+                    await savePothole(result);
+
+                    // Update stats
+                    detectedCount++;
+                    confidenceSum += result.confidence;
+                    updateStats(result.confidence);
+
+                    showToast(`🚨 Pothole detected! ${(result.confidence * 100).toFixed(1)}%`, 'success');
+                }
+            } catch (error) {
+                console.error('Detection error:', error);
+            }
+        }
+
+        // Show bounding box on camera feed
+        function showBoundingBox(bbox, confidence) {
+            const boundingBox = document.getElementById('bounding-box');
+            const label = document.getElementById('detection-label');
+
+            if (!bbox || !boundingBox) return;
+
+            // bbox format: [x1, y1, x2, y2] in pixels
+            const [x1, y1, x2, y2] = bbox;
+
+            // Calculate dimensions
+            const left = Math.min(x1, x2);
+            const top = Math.min(y1, y2);
+            const width = Math.abs(x2 - x1);
+            const height = Math.abs(y2 - y1);
+
+            // Position bounding box (as percentage of container)
+            const container = document.querySelector('.camera-container');
+            const containerWidth = container.offsetWidth;
+            const containerHeight = container.offsetHeight;
+
+            boundingBox.style.left = `${(left / 640) * 100}%`;
+            boundingBox.style.top = `${(top / 640) * 100}%`;
+            boundingBox.style.width = `${(width / 640) * 100}%`;
+            boundingBox.style.height = `${(height / 640) * 100}%`;
+
+            // Update label
+            label.textContent = `🚨 Pothole ${(confidence * 100).toFixed(1)}%`;
+
+            // Show box
+            boundingBox.classList.add('active');
+
+            // Hide after 3 seconds
+            setTimeout(() => {
+                boundingBox.classList.remove('active');
+            }, 3000);
+        }
+
+        // Save pothole to backend
+        async function savePothole(result) {
+            try {
+                const potholeData = {
+                    latitude: currentLat || 12.9233376,
+                    longitude: currentLng || 77.5011285,
+                    timestamp: new Date().toISOString(),
+                    confidence: result.confidence,
+                    image_path: result.image_path
+                };
+
+                const response = await fetch(`${API_URL}/potholes`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(potholeData)
+                });
+
+                if (response.ok) {
+                    const saved = await response.json();
+                    console.log('Pothole saved:', saved);
+                }
+            } catch (error) {
+                console.error('Save error:', error);
+            }
+        }
+
+        // Update statistics
+        function updateStats(confidence) {
+            document.getElementById('detected-count').textContent = detectedCount;
+            const avgConf = (confidenceSum / detectedCount * 100).toFixed(1);
+            document.getElementById('avg-confidence').textContent = avgConf + '%';
+
+            const now = new Date();
+            document.getElementById('last-time').textContent = now.toLocaleTimeString('en-US', {
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+
+        // Toggle detection
+        function toggleDetection() {
+            const btn = document.getElementById('detect-btn');
+
+            if (!isDetecting) {
+                // Start detection
+                isDetecting = true;
+                btn.className = 'detection-button btn-stop';
+                btn.innerHTML = '<span>⏸️</span><span>Stop Detection</span>';
+
+                detectionInterval = setInterval(detectPothole, DETECTION_INTERVAL);
+                showToast('Detection started!', 'success');
+            } else {
+                // Stop detection
+                isDetecting = false;
+                btn.className = 'detection-button btn-start';
+                btn.innerHTML = '<span>▶️</span><span>Start Detection</span>';
+
+                clearInterval(detectionInterval);
+                showToast('Detection stopped', 'info');
+            }
+        }
+
+        // Show toast notification
+        function showToast(message, type = 'info') {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.className = `toast ${type} show`;
+
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+
+        // Initialize on load
+        window.addEventListener('load', () => {
+            initCamera();
+            initGPS();
+
+            document.getElementById('detect-btn').addEventListener('click', toggleDetection);
+        });
+
+        // Cleanup on unload
+        window.addEventListener('beforeunload', () => {
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+            }
+        });
+    </script>
+
+    <script>
+        // Theme switching functionality (synced with home page)
+        function setTheme(theme) {
+            const body = document.body;
+            const lightBtn = document.getElementById('light-btn');
+            const darkBtn = document.getElementById('dark-btn');
+
+            if (theme === 'dark') {
+                body.classList.add('dark-mode');
+                lightBtn.classList.remove('active');
+                darkBtn.classList.add('active');
+                localStorage.setItem('theme', 'dark');
+            } else {
+                body.classList.remove('dark-mode');
+                darkBtn.classList.remove('active');
+                lightBtn.classList.add('active');
+                localStorage.setItem('theme', 'light');
+            }
+        }
+
+        // Load saved theme on page load
+        window.addEventListener('load', () => {
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            setTheme(savedTheme);
+        });
+    </script>
+</body>
+
+</html>

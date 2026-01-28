@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#667eea">
+    <title>Detection History - Pothole Detector</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        :root {
+            /* Light mode */
+            --bg-gradient-start: #667eea;
+            --bg-gradient-end: #764ba2;
+            --header-bg: rgba(0, 0, 0, 0.3);
+            --card-bg: rgba(255, 255, 255, 0.95);
+            --text-primary: #1f2937;
+            --text-secondary: #6b7280;
+            --border-color: rgba(0, 0, 0, 0.1);
+            --stats-bg: #f8f9fa;
+        }
+
+        body.dark-mode {
+            /* Dark mode */
+            --bg-gradient-start: #1e1b4b;
+            --bg-gradient-end: #312e81;
+            --header-bg: rgba(0, 0, 0, 0.5);
+            --card-bg: rgba(30, 27, 75, 0.95);
+            --text-primary: #f9fafb;
+            --text-secondary: #d1d5db;
+            --border-color: rgba(255, 255, 255, 0.1);
+            --stats-bg: #312e81;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, var(--bg-gradient-start) 0%, var(--bg-gradient-end) 100%);
+            min-height: 100vh;
+            padding-bottom: 80px;
+            transition: background 0.3s ease;
+        }
+
+        /* Theme Toggle */
+        .theme-toggle {
+            position: fixed;
+            top: 70px;
+            right: 15px;
+            z-index: 999;
+            display: flex;
+            gap: 6px;
+            background: var(--card-bg);
+            padding: 6px;
+            border-radius: 50px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .theme-btn {
+            width: 36px;
+            height: 36px;
+            border: none;
+            border-radius: 50%;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: transparent;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .theme-btn.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.4);
+        }
+
+        /* Header */
+        .header {
+            background: rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(10px);
+            padding: 15px 20px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .header h1 {
+            color: white;
+            font-size: 20px;
+            font-weight: 600;
+            text-align: center;
+        }
+
+        /* Stats Summary */
+        .stats-summary {
+            background: var(--card-bg);
+            margin: 15px;
+            padding: 20px;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            transition: background 0.3s ease;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+        }
+
+        .stat-item {
+            text-align: center;
+            padding: 10px;
+            background: var(--stats-bg);
+            border-radius: 12px;
+            transition: background 0.3s ease;
+        }
+
+        .stat-value {
+            font-size: 28px;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* Filter Buttons */
+        .filter-bar {
+            padding: 15px;
+            display: flex;
+            gap: 10px;
+            overflow-x: auto;
+        }
+
+        .filter-btn {
+            padding: 8px 16px;
+            border: 2px solid rgba(255, 255, 255, 0.5);
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border-radius: 20px;
+            font-size: 14px;
+            white-space: nowrap;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .filter-btn.active {
+            background: white;
+            color: #667eea;
+            border-color: white;
+        }
+
+        /* History List */
+        .history-container {
+            padding: 0 15px 15px;
+        }
+
+        .history-item {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 15px;
+            margin-bottom: 15px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            animation: slideIn 0.3s ease;
+            transition: background 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .item-id {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .confidence-badge {
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .confidence-high {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .confidence-medium {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .confidence-low {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        /* Image Preview */
+        .image-preview {
+            width: 100%;
+            height: 200px;
+            background: #f3f4f6;
+            border-radius: 12px;
+            margin-bottom: 12px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .image-preview img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .image-placeholder {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: #9ca3af;
+            font-size: 14px;
+        }
+
+        /* Details Grid */
+        .details-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+
+        .detail-item {
+            background: var(--stats-bg);
+            padding: 10px;
+            border-radius: 8px;
+            transition: background 0.3s ease;
+        }
+
+        .detail-label {
+            font-size: 11px;
+            color: var(--text-secondary);
+            margin-bottom: 4px;
+            text-transform: uppercase;
+        }
+
+        .detail-value {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-primary);
+            font-family: 'Courier New', monospace;
+        }
+
+        /* Action Buttons */
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .action-btn {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-map {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-share {
+            background: #10b981;
+            color: white;
+        }
+
+        .btn-delete {
+            background: #ef4444;
+            color: white;
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: white;
+        }
+
+        .empty-icon {
+            font-size: 64px;
+            margin-bottom: 20px;
+        }
+
+        .empty-text {
+            font-size: 18px;
+            margin-bottom: 10px;
+        }
+
+        .empty-subtext {
+            font-size: 14px;
+            opacity: 0.8;
+        }
+
+        /* Loading */
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: white;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* Bottom Nav */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--card-bg);
+            backdrop-filter: blur(10px);
+            display: flex;
+            justify-content: space-around;
+            padding: 12px 0;
+            border-top: 1px solid var(--border-color);
+            z-index: 100;
+            transition: background 0.3s ease;
+        }
+
+        .nav-item {
+            flex: 1;
+            text-align: center;
+            padding: 8px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 12px;
+            transition: color 0.3s;
+        }
+
+        .nav-item.active {
+            color: #667eea;
+        }
+
+        .nav-icon {
+            font-size: 24px;
+            display: block;
+            margin-bottom: 4px;
+        }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            bottom: 80px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: rgba(0, 0, 0, 0.9);
+            color: white;
+            padding: 16px 24px;
+            border-radius: 12px;
+            font-size: 14px;
+            z-index: 1000;
+            transition: transform 0.3s;
+        }
+
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Theme Toggle -->
+    <div class="theme-toggle">
+        <button class="theme-btn active" id="light-btn" onclick="setTheme('light')" title="Light Mode">
+            ☀️
+        </button>
+        <button class="theme-btn" id="dark-btn" onclick="setTheme('dark')" title="Dark Mode">
+            🌙
+        </button>
+    </div>
+
+    <!-- Header -->
+    <div class="header">
+        <h1>📊 Detection History</h1>
+    </div>
+
+    <!-- Stats Summary -->
+    <div class="stats-summary">
+        <div class="stats-grid">
+            <div class="stat-item">
+                <div class="stat-value" id="total-count">0</div>
+                <div class="stat-label">Total</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="avg-confidence">0%</div>
+                <div class="stat-label">Avg Conf.</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="today-count">0</div>
+                <div class="stat-label">Today</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter Bar -->
+    <div class="filter-bar">
+        <button class="filter-btn active" data-filter="all">All</button>
+        <button class="filter-btn" data-filter="today">Today</button>
+        <button class="filter-btn" data-filter="week">This Week</button>
+        <button class="filter-btn" data-filter="high">High Confidence</button>
+    </div>
+
+    <!-- History Container -->
+    <div class="history-container" id="history-container">
+        <div class="loading">
+            <div class="spinner"></div>
+            <div>Loading history...</div>
+        </div>
+    </div>
+
+    <!-- Bottom Navigation -->
+    <div class="bottom-nav">
+        <a href="home.html" class="nav-item">
+            <span class="nav-icon">🏠</span>
+            Home
+        </a>
+        <a href="mobile-detect.html" class="nav-item">
+            <span class="nav-icon">📹</span>
+            Detect
+        </a>
+        <a href="history.html" class="nav-item active">
+            <span class="nav-icon">📊</span>
+            History
+        </a>
+        <a href="map.html" class="nav-item">
+            <span class="nav-icon">🗺️</span>
+            Map
+        </a>
+    </div>
+
+    <!-- Toast -->
+    <div class="toast" id="toast"></div>
+
+    <script>
+        const API_URL = 'http://10.42.117.136:8000';
+        let allPotholes = [];
+        let currentFilter = 'all';
+
+        // Load history on page load
+        window.addEventListener('load', () => {
+            loadHistory();
+            setupFilters();
+        });
+
+        // Load pothole history
+        async function loadHistory() {
+            try {
+                const response = await fetch(`${API_URL}/potholes`);
+                if (!response.ok) throw new Error('Failed to load history');
+
+                allPotholes = await response.json();
+                allPotholes.reverse(); // Show newest first
+
+                updateStats();
+                displayHistory(allPotholes);
+            } catch (error) {
+                console.error('Error loading history:', error);
+                showEmpty('Failed to load history. Please check your connection.');
+            }
+        }
+
+        // Update statistics
+        function updateStats() {
+            const total = allPotholes.length;
+            const avgConf = total > 0
+                ? (allPotholes.reduce((sum, p) => sum + (p.confidence || 0), 0) / total * 100).toFixed(1)
+                : 0;
+
+            const today = new Date().toDateString();
+            const todayCount = allPotholes.filter(p =>
+                new Date(p.timestamp).toDateString() === today
+            ).length;
+
+            document.getElementById('total-count').textContent = total;
+            document.getElementById('avg-confidence').textContent = avgConf + '%';
+            document.getElementById('today-count').textContent = todayCount;
+        }
+
+        // Display history items
+        function displayHistory(potholes) {
+            const container = document.getElementById('history-container');
+
+            if (potholes.length === 0) {
+                showEmpty('No potholes detected yet. Start detecting to see history!');
+                return;
+            }
+
+            container.innerHTML = potholes.map(pothole => createHistoryItem(pothole)).join('');
+        }
+
+        // Create history item HTML
+        function createHistoryItem(pothole) {
+            const confidence = (pothole.confidence || 0) * 100;
+            const confidenceClass = confidence >= 75 ? 'confidence-high'
+                : confidence >= 50 ? 'confidence-medium'
+                    : 'confidence-low';
+
+            const date = new Date(pothole.timestamp);
+            const formattedDate = date.toLocaleDateString();
+            const formattedTime = date.toLocaleTimeString('en-US', {
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+
+            // Construct image path
+            let imagePath = null;
+            if (pothole.image_path && pothole.image_path.trim() !== '') {
+                imagePath = `${API_URL}/${pothole.image_path}`;
+                console.log(`Pothole #${pothole.id}: Image path = ${imagePath}`);
+            } else {
+                console.log(`Pothole #${pothole.id}: No image_path in data`);
+            }
+
+            return `
+                <div class="history-item">
+                    <div class="item-header">
+                        <div class="item-id">🚨 Pothole #${pothole.id}</div>
+                        <div class="confidence-badge ${confidenceClass}">
+                            ${confidence.toFixed(1)}%
+                        </div>
+                    </div>
+                    
+                    <div class="image-preview">
+                        ${imagePath
+                    ? `<img src="${imagePath}" alt="Pothole ${pothole.id}" crossorigin="anonymous" onerror="console.error('Image load failed:', '${imagePath}'); this.parentElement.innerHTML='<div class=\\'image-placeholder\\'>Image not available</div>';">`
+                    : '<div class="image-placeholder">No image</div>'
+                }
+                    </div>
+                    
+                    <div class="details-grid">
+                        <div class="detail-item">
+                            <div class="detail-label">Latitude</div>
+                            <div class="detail-value">${pothole.latitude.toFixed(6)}</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Longitude</div>
+                            <div class="detail-value">${pothole.longitude.toFixed(6)}</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Date</div>
+                            <div class="detail-value">${formattedDate}</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Time</div>
+                            <div class="detail-value">${formattedTime}</div>
+                        </div>
+                    </div>
+                    
+                    <div class="action-buttons">
+                        <button class="action-btn btn-map" onclick="openInMaps(${pothole.latitude}, ${pothole.longitude})">
+                            🗺️ View on Map
+                        </button>
+                        <button class="action-btn btn-share" onclick="shareLocation(${pothole.id}, ${pothole.latitude}, ${pothole.longitude})">
+                            📤 Share
+                        </button>
+                        <button class="action-btn btn-delete" onclick="deletePothole(${pothole.id})">
+                            🗑️ Delete
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Setup filter buttons
+        function setupFilters() {
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+
+                    const filter = btn.dataset.filter;
+                    currentFilter = filter;
+                    applyFilter(filter);
+                });
+            });
+        }
+
+        // Apply filter
+        function applyFilter(filter) {
+            let filtered = [...allPotholes];
+            const now = new Date();
+
+            switch (filter) {
+                case 'today':
+                    filtered = filtered.filter(p =>
+                        new Date(p.timestamp).toDateString() === now.toDateString()
+                    );
+                    break;
+                case 'week':
+                    const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+                    filtered = filtered.filter(p => new Date(p.timestamp) >= weekAgo);
+                    break;
+                case 'high':
+                    filtered = filtered.filter(p => (p.confidence || 0) >= 0.75);
+                    break;
+            }
+
+            displayHistory(filtered);
+        }
+
+        // Open in Google Maps
+        function openInMaps(lat, lng) {
+            window.open(`https://www.google.com/maps?q=${lat},${lng}`, '_blank');
+        }
+
+        // Share location
+        async function shareLocation(id, lat, lng) {
+            const text = `Pothole #${id} detected at ${lat}, ${lng}\nhttps://www.google.com/maps?q=${lat},${lng}`;
+
+            if (navigator.share) {
+                try {
+                    await navigator.share({ text });
+                    showToast('Shared successfully!');
+                } catch (err) {
+                    copyToClipboard(text);
+                }
+            } else {
+                copyToClipboard(text);
+            }
+        }
+
+        // Copy to clipboard
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                showToast('Copied to clipboard!');
+            }).catch(() => {
+                showToast('Failed to copy');
+            });
+        }
+
+        // Show empty state
+        function showEmpty(message) {
+            document.getElementById('history-container').innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-icon">📭</div>
+                    <div class="empty-text">No Results</div>
+                    <div class="empty-subtext">${message}</div>
+                </div>
+            `;
+        }
+
+        // Show toast
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 3000);
+        }
+
+        // Delete pothole
+        async function deletePothole(id) {
+            if (!confirm(`Are you sure you want to permanently delete Pothole #${id}?`)) {
+                return;
+            }
+
+            try {
+                showToast('Deleting...');
+
+                const response = await fetch(`${API_URL}/potholes/${id}`, {
+                    method: 'DELETE'
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to delete pothole');
+                }
+
+                const result = await response.json();
+                showToast(`Pothole #${id} deleted!`);
+
+                // Reload history
+                await loadHistory();
+
+            } catch (error) {
+                console.error('Error deleting pothole:', error);
+                showToast('Failed to delete pothole');
+            }
+        }
+
+        // Auto-refresh every 30 seconds
+        setInterval(loadHistory, 30000);
+    </script>
+
+    <script>
+        // Theme switching functionality (synced)
+        function setTheme(theme) {
+            const body = document.body;
+            const lightBtn = document.getElementById('light-btn');
+            const darkBtn = document.getElementById('dark-btn');
+
+            if (theme === 'dark') {
+                body.classList.add('dark-mode');
+                lightBtn.classList.remove('active');
+                darkBtn.classList.add('active');
+                localStorage.setItem('theme', 'dark');
+            } else {
+                body.classList.remove('dark-mode');
+                darkBtn.classList.remove('active');
+                lightBtn.classList.add('active');
+                localStorage.setItem('theme', 'light');
+            }
+        }
+
+        // Load saved theme on page load
+        window.addEventListener('load', () => {
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            setTheme(savedTheme);
+        });
+    </script>
+</body>
+
+</html>
