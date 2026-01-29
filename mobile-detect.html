@@ -790,6 +790,9 @@
                 console.log('⏱️ Detection interval:', DETECTION_INTERVAL, 'ms');
                 console.log('⏳ Cooldown period:', COOLDOWN_MS, 'ms');
 
+                // Initialize lastDetectionTime to allow first detection immediately
+                lastDetectionTime = Date.now() - COOLDOWN_MS;
+
                 detectionInterval = setInterval(detectPothole, DETECTION_INTERVAL);
                 showToast('✅ Detection started! Watch console for logs.', 'success');
 
