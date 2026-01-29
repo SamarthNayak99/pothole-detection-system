@@ -596,9 +596,13 @@
         async function detectPothole() {
             try {
                 console.log('🔍 Starting detection...');
+                console.log('⏰ Current time:', new Date().toLocaleTimeString());
 
                 // Check cooldown
                 const now = Date.now();
+                const timeSinceLastDetection = now - lastDetectionTime;
+                console.log(`⏱️ Time since last detection: ${timeSinceLastDetection}ms (cooldown: ${COOLDOWN_MS}ms)`);
+
                 if (now - lastDetectionTime < COOLDOWN_MS) {
                     console.log('⏳ Cooldown active, skipping');
                     return;
@@ -606,8 +610,13 @@
 
                 // Capture frame from video
                 const video = document.getElementById('camera-feed');
+                console.log('📹 Video element:', video ? 'Found' : 'Not found');
+                console.log('📐 Video dimensions:', video ? `${video.videoWidth}x${video.videoHeight}` : 'N/A');
+                console.log('▶️ Video ready state:', video ? video.readyState : 'N/A');
+
                 if (!video || !video.videoWidth) {
-                    console.log('❌ Video not ready');
+                    console.log('❌ Video not ready - skipping frame');
+                    showToast('⚠️ Camera not ready', 'error');
                     return;
                 }
 
@@ -624,8 +633,13 @@
 
                 // Send to backend
                 console.log(`🌐 Sending to: ${API_URL}/detect`);
+                console.log('📦 Image size:', blob.size, 'bytes');
+
                 const formData = new FormData();
                 formData.append('file', blob, 'frame.jpg');
+
+                console.log('📡 Sending request...');
+                showToast('🔍 Analyzing frame...', 'info');
 
                 const response = await fetch(`${API_URL}/detect`, {
                     method: 'POST',
@@ -670,9 +684,14 @@
                     updateStats(result.confidence);
 
                     showToast(`🚨 Pothole detected! ${(result.confidence * 100).toFixed(1)}%`, 'success');
+                } else {
+                    console.log('ℹ️ No pothole detected in this frame');
+                    console.log('   Confidence:', result.confidence ? `${(result.confidence * 100).toFixed(1)}%` : 'N/A');
                 }
             } catch (error) {
-                console.error('Detection error:', error);
+                console.error('❌ Detection error:', error);
+                console.error('   Error details:', error.message);
+                showToast(`❌ Error: ${error.message}`, 'error');
             }
         }
 
@@ -763,8 +782,15 @@
                 btn.className = 'detection-button btn-stop';
                 btn.innerHTML = '<span>⏸️</span><span>Stop Detection</span>';
 
+                console.log('🚀 Starting detection loop...');
+                console.log('⏱️ Detection interval:', DETECTION_INTERVAL, 'ms');
+                console.log('⏳ Cooldown period:', COOLDOWN_MS, 'ms');
+
                 detectionInterval = setInterval(detectPothole, DETECTION_INTERVAL);
-                showToast('Detection started!', 'success');
+                showToast('✅ Detection started! Watch console for logs.', 'success');
+
+                // Run first detection immediately
+                setTimeout(detectPothole, 100);
             } else {
                 // Stop detection
                 isDetecting = false;
