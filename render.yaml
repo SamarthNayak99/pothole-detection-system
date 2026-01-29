@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: pothole-detection-backend
+    env: python
+    region: singapore
+    plan: free
+    branch: main
+    buildCommand: "pip install -r requirements.txt"
+    startCommand: "cd backend && uvicorn main:app --host 0.0.0.0 --port $PORT"
+    envVars:
+      - key: EMAIL_SENDER
+        value: rvcedtl@gmail.com
+      - key: EMAIL_PASSWORD
+        value: vznt ndxz ktmo orqf
+      - key: EMAIL_RECEIVER
+        value: samnayak64@gmail.com
+      - key: PYTHON_VERSION
+        value: 3.11.0
