@@ -1,0 +1,26 @@
+{
+    "rewrites": [
+        {
+            "source": "/",
+            "destination": "/index.html"
+        },
+        {
+            "source": "/mobile-detect",
+            "destination": "/mobile-detect.html"
+        },
+        {
+            "source": "/map",
+            "destination": "/map.html"
+        },
+        {
+            "source": "/history",
+            "destination": "/history.html"
+        },
+        {
+            "source": "/home",
+            "destination": "/home.html"
+        }
+    ],
+    "cleanUrls": true,
+    "trailingSlash": false
+}
