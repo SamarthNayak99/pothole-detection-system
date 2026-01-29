@@ -647,7 +647,10 @@
 
                     // Show bounding box on screen
                     if (result.bbox) {
-                        showBoundingBox(result.bbox, result.confidence);
+                        // Pass image dimensions for correct scaling
+                        const imgWidth = canvas.width;
+                        const imgHeight = canvas.height;
+                        showBoundingBox(result.bbox, result.confidence, imgWidth, imgHeight);
                     }
 
                     // Play beep
@@ -674,30 +677,30 @@
         }
 
         // Show bounding box on camera feed
-        function showBoundingBox(bbox, confidence) {
+        function showBoundingBox(bbox, confidence, imgWidth, imgHeight) {
             const boundingBox = document.getElementById('bounding-box');
             const label = document.getElementById('detection-label');
 
             if (!bbox || !boundingBox) return;
 
-            // bbox format: [x1, y1, x2, y2] in pixels
+            // bbox format: [x1, y1, x2, y2] in pixels of the original image
             const [x1, y1, x2, y2] = bbox;
 
-            // Calculate dimensions
+            // Calculate dimensions relative to the image size
             const left = Math.min(x1, x2);
             const top = Math.min(y1, y2);
             const width = Math.abs(x2 - x1);
             const height = Math.abs(y2 - y1);
 
             // Position bounding box (as percentage of container)
-            const container = document.querySelector('.camera-container');
-            const containerWidth = container.offsetWidth;
-            const containerHeight = container.offsetHeight;
+            // Use the actual image dimensions that were sent to backend
+            const validWidth = imgWidth || 640;
+            const validHeight = imgHeight || 640;
 
-            boundingBox.style.left = `${(left / 640) * 100}%`;
-            boundingBox.style.top = `${(top / 640) * 100}%`;
-            boundingBox.style.width = `${(width / 640) * 100}%`;
-            boundingBox.style.height = `${(height / 640) * 100}%`;
+            boundingBox.style.left = `${(left / validWidth) * 100}%`;
+            boundingBox.style.top = `${(top / validHeight) * 100}%`;
+            boundingBox.style.width = `${(width / validWidth) * 100}%`;
+            boundingBox.style.height = `${(height / validHeight) * 100}%`;
 
             // Update label
             label.textContent = `🚨 Pothole ${(confidence * 100).toFixed(1)}%`;
