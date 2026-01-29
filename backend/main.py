@@ -56,10 +56,12 @@ app.add_middleware(
 # ============================================
 # Static Files for Images
 # ============================================
+# Use persistent disk for images in production, local directory in development
+IMAGES_DIR = os.path.join(os.getenv("DATA_DIR", "."), "detected_potholes")
 # Create directory if it doesn't exist
-os.makedirs("detected_potholes", exist_ok=True)
+os.makedirs(IMAGES_DIR, exist_ok=True)
 # Mount static files to serve images
-app.mount("/detected_potholes", StaticFiles(directory="detected_potholes"), name="detected_potholes")
+app.mount("/detected_potholes", StaticFiles(directory=IMAGES_DIR), name="detected_potholes")
 
 # Data Models
 # ============================================
@@ -105,11 +107,16 @@ class DetectionResult(BaseModel):
 # CSV Storage Configuration
 # ============================================
 
-CSV_FILE = "potholes.csv"
+# Use persistent disk path if available (production), otherwise use local path (development)
+DATA_DIR = os.getenv("DATA_DIR", ".")  # /data in production, current dir in development
+CSV_FILE = os.path.join(DATA_DIR, "potholes.csv")
 CSV_HEADERS = ["id", "latitude", "longitude", "timestamp", "confidence", "image_path"]
 
 def initialize_csv():
     """Create CSV file with headers if it doesn't exist"""
+    # Ensure data directory exists
+    os.makedirs(DATA_DIR, exist_ok=True)
+    
     if not os.path.exists(CSV_FILE):
         with open(CSV_FILE, 'w', newline='') as f:
             writer = csv.writer(f)
@@ -386,10 +393,12 @@ def startup_event():
     initialize_csv()
     
     # Create detected_potholes directory if it doesn't exist
-    os.makedirs("detected_potholes", exist_ok=True)
+    os.makedirs(IMAGES_DIR, exist_ok=True)
     
     print("🚀 Pothole Detection API started successfully!")
-    print(f"📁 Using CSV file: {CSV_FILE}")
-    print(f"🖼️  Images directory: detected_potholes/")
+    print(f"📁 Data directory: {DATA_DIR}")
+    print(f"📄 CSV file: {CSV_FILE}")
+    print(f"🖼️  Images directory: {IMAGES_DIR}")
+    print(f"💾 Persistent storage: {'ENABLED ✅' if DATA_DIR != '.' else 'DISABLED (local dev)'}")
     print(f"🌐 API available at: http://localhost:8000")
     print(f"📚 API docs at: http://localhost:8000/docs")

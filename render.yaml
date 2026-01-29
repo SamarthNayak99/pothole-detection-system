@@ -16,3 +16,10 @@ services:
         value: samnayak64@gmail.com
       - key: PYTHON_VERSION
         value: 3.11.0
+      - key: DATA_DIR
+        value: /data
+    # Persistent Disk - Data will NEVER be deleted!
+    disk:
+      name: pothole-data
+      mountPath: /data
+      sizeGB: 1

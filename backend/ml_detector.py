@@ -17,7 +17,8 @@ from datetime import datetime
 # Configuration
 MODEL_PATH = "C:/Users/samar/Desktop/yolo_test/best.pt"
 CONFIDENCE_THRESHOLD = 0.5  # 50% confidence minimum (balanced for real-world use)
-IMAGES_DIR = "detected_potholes"  # Directory to save pothole images
+# Use persistent disk for images in production, local directory in development
+IMAGES_DIR = os.path.join(os.getenv("DATA_DIR", "."), "detected_potholes")
 
 # Model will be loaded lazily (on first use)
 model = None
