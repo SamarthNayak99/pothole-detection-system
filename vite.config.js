@@ -11,6 +11,7 @@ export default defineConfig({
         map: resolve(__dirname, 'map.html'),
         history: resolve(__dirname, 'history.html'),
         home: resolve(__dirname, 'home.html'),
+        'test-backend': resolve(__dirname, 'test-backend.html'),
       },
     },
   },
