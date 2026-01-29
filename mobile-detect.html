@@ -599,18 +599,8 @@
         // Capture frame and detect
         async function detectPothole() {
             try {
-                console.log('🔍 Starting detection...');
+                // No cooldown - detect every interval
                 console.log('⏰ Current time:', new Date().toLocaleTimeString());
-
-                // Check cooldown
-                const now = Date.now();
-                const timeSinceLastDetection = now - lastDetectionTime;
-                console.log(`⏱️ Time since last detection: ${timeSinceLastDetection}ms (cooldown: ${COOLDOWN_MS}ms)`);
-
-                if (now - lastDetectionTime < COOLDOWN_MS) {
-                    console.log('⏳ Cooldown active, skipping');
-                    return;
-                }
 
                 // Capture frame from video
                 const video = document.getElementById('camera-feed');
@@ -661,7 +651,6 @@
 
                 // If pothole detected (30% confidence minimum)
                 if (result.detected && result.confidence >= 0.3) {
-                    lastDetectionTime = now;
 
                     // Show bounding box on screen
                     if (result.bbox) {
