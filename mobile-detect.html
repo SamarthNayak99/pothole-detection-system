@@ -654,7 +654,13 @@
                 }
 
                 const result = await response.json();
-                console.log('✅ Detection result:', result);
+                console.log(`🔍 Analysis Result:`);
+                console.log(`   - Detected: ${result.detected}`);
+                console.log(`   - Confidence: ${(result.confidence * 100).toFixed(1)}%`);
+                if (result.bbox) console.log(`   - BBox: ${JSON.stringify(result.bbox)}`);
+
+                // Show live confidence on UI (optional debug element)
+                showToast(`Analysis: ${(result.confidence * 100).toFixed(1)}%`, 'info');
 
                 // If pothole detected (30% confidence minimum)
                 if (result.detected && result.confidence >= 0.3) {
