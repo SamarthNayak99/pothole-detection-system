@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Backend Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background: #1a1a2e;
+            color: white;
+        }
+
+        .test-box {
+            background: #16213e;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 10px 0;
+        }
+
+        button {
+            background: #0f3460;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            width: 100%;
+            margin: 10px 0;
+        }
+
+        button:active {
+            background: #e94560;
+        }
+
+        .result {
+            background: #0f3460;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+            word-wrap: break-word;
+        }
+
+        .success {
+            background: #2ecc71;
+        }
+
+        .error {
+            background: #e74c3c;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>🔧 Backend Test</h1>
+
+    <div class="test-box">
+        <h2>Test 1: Check if Backend is Alive</h2>
+        <button onclick="testBackend()">Test Backend Connection</button>
+        <div id="backend-result" class="result"></div>
+    </div>
+
+    <div class="test-box">
+        <h2>Test 2: Upload Test Image</h2>
+        <input type="file" id="imageInput" accept="image/*" capture="environment"
+            style="width: 100%; padding: 10px; margin: 10px 0;">
+        <button onclick="testDetection()">Test Detection</button>
+        <div id="detection-result" class="result"></div>
+    </div>
+
+    <div class="test-box">
+        <h2>Test 3: Get Potholes List</h2>
+        <button onclick="getPotholes()">Get All Potholes</button>
+        <div id="potholes-result" class="result"></div>
+    </div>
+
+    <script>
+        const API_URL = 'https://pothole-detection-backend-vpmt.onrender.com';
+
+        async function testBackend() {
+            const resultDiv = document.getElementById('backend-result');
+            resultDiv.textContent = '⏳ Testing...';
+            resultDiv.className = 'result';
+
+            try {
+                const response = await fetch(`${API_URL}/`);
+                const data = await response.json();
+
+                resultDiv.className = 'result success';
+                resultDiv.textContent = '✅ Backend is alive!\n\n' + JSON.stringify(data, null, 2);
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = '❌ Error: ' + error.message;
+            }
+        }
+
+        async function testDetection() {
+            const resultDiv = document.getElementById('detection-result');
+            const fileInput = document.getElementById('imageInput');
+
+            if (!fileInput.files[0]) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = '❌ Please select an image first!';
+                return;
+            }
+
+            resultDiv.textContent = '⏳ Detecting...';
+            resultDiv.className = 'result';
+
+            try {
+                const formData = new FormData();
+                formData.append('file', fileInput.files[0]);
+
+                console.log('Sending to:', `${API_URL}/detect`);
+
+                const response = await fetch(`${API_URL}/detect`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                console.log('Response status:', response.status);
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const data = await response.json();
+                console.log('Detection result:', data);
+
+                if (data.detected) {
+                    resultDiv.className = 'result success';
+                    resultDiv.textContent = `🎉 POTHOLE DETECTED!\n\nConfidence: ${(data.confidence * 100).toFixed(1)}%\n\nFull response:\n${JSON.stringify(data, null, 2)}`;
+                } else {
+                    resultDiv.className = 'result';
+                    resultDiv.textContent = `ℹ️ No pothole detected\n\nConfidence: ${data.confidence ? (data.confidence * 100).toFixed(1) + '%' : 'N/A'}\n\nFull response:\n${JSON.stringify(data, null, 2)}`;
+                }
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = '❌ Error: ' + error.message + '\n\nCheck console for details';
+                console.error('Detection error:', error);
+            }
+        }
+
+        async function getPotholes() {
+            const resultDiv = document.getElementById('potholes-result');
+            resultDiv.textContent = '⏳ Loading...';
+            resultDiv.className = 'result';
+
+            try {
+                const response = await fetch(`${API_URL}/potholes`);
+                const data = await response.json();
+
+                resultDiv.className = 'result success';
+                resultDiv.textContent = `✅ Found ${data.length} potholes\n\n` + JSON.stringify(data, null, 2);
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = '❌ Error: ' + error.message;
+            }
+        }
+    </script>
+</body>
+
+</html>
