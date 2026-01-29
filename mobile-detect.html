@@ -521,8 +521,8 @@
     <script>
         // Configuration
         const API_URL = 'https://pothole-detection-backend-vpmt.onrender.com';
-        const DETECTION_INTERVAL = 1000; // 1 second
-        const COOLDOWN_MS = 5000; // 5 seconds
+        const DETECTION_INTERVAL = 2000; // 2 seconds (reduced load on backend)
+        const COOLDOWN_MS = 2000; // 2 seconds (allow faster re-detection)
 
         // State
         let stream = null;
@@ -631,8 +631,8 @@
                 const ctx = canvas.getContext('2d');
                 ctx.drawImage(video, 0, 0);
 
-                // Convert to blob
-                const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.95));
+                // Convert to blob with lower quality to reduce size
+                const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.7));
                 console.log(`✅ Frame captured: ${blob.size} bytes`);
 
                 // Send to backend
