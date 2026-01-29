@@ -637,8 +637,15 @@
 
                 const response = await fetch(`${API_URL}/detect`, {
                     method: 'POST',
-                    body: formData
+                    body: formData,
+                    signal: AbortSignal.timeout(10000) // 10 second timeout
+                }).catch(err => {
+                    console.error("Fetch error:", err);
+                    showToast('❌ Backend offline/sleeping', 'error');
+                    return null;
                 });
+
+                if (!response) return; // Skip if request failed
 
                 console.log(`📡 Response status: ${response.status}`);
 
