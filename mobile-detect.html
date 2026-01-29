@@ -641,8 +641,8 @@
                 const result = await response.json();
                 console.log('✅ Detection result:', result);
 
-                // If pothole detected
-                if (result.detected && result.confidence >= 0.5) {
+                // If pothole detected (30% confidence minimum)
+                if (result.detected && result.confidence >= 0.3) {
                     lastDetectionTime = now;
 
                     // Show bounding box on screen

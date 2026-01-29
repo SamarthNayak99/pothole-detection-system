@@ -17,7 +17,7 @@ from datetime import datetime
 # Configuration
 # Use relative path that works on both local and Render
 MODEL_PATH = os.path.join(os.path.dirname(__file__), "models", "best.pt")
-CONFIDENCE_THRESHOLD = 0.5  # 50% confidence minimum (balanced for real-world use)
+CONFIDENCE_THRESHOLD = 0.3  # 30% confidence minimum (more sensitive for testing)
 # Use persistent disk for images in production, local directory in development
 IMAGES_DIR = os.path.join(os.getenv("DATA_DIR", "."), "detected_potholes")
 
